@@ -22,4 +22,4 @@ If no suitable match is found, a fallback response ensures smooth and continuous
 
 ###Output
 
-
+<img width="599" height="187" alt="Image" src="https://github.com/user-attachments/assets/67ed6ca1-03c4-4830-8a7b-c13e6182573f" />
