@@ -1,0 +1,206 @@
+import math
+import random
+import string
+# -------------------------------
+# Knowledge Base / Intents
+# -------------------------------
+intents = {
+    "greeting": {
+        "patterns": [
+            "hello", "hi", "hey", "good morning",
+            "good evening", "how are you"
+        ],
+        "responses": [
+            "Hello! How can I help you?",
+            "Hi there! What can I do for you?",
+            "Hey! Ask me anything."
+        ]
+    },
+    "about": {
+        "patterns": [
+            "who are you",
+            "what are you",
+            "tell me about yourself"
+        ],
+        "responses": [
+            "I am an AI chatbot built using NLP concepts.",
+            "I'm your virtual assistant.",
+            "I help answer questions intelligently."
+        ]
+    },
+    "python": {
+        "patterns": [
+            "what is python",
+            "tell me about python",
+            "python language",
+            "python uses",
+            "why python"
+        ],
+        "responses": [
+            "Python is a powerful programming language.",
+            "Python is widely used in AI, ML, and web development.",
+            "Python is beginner-friendly and very versatile."
+        ]
+    },
+    "goodbye": {
+        "patterns": [
+            "bye", "goodbye", "see you", "exit"
+        ],
+        "responses": [
+            "Goodbye!",
+            "See you later!",
+            "Have a great day!"
+        ]
+    }
+}
+
+# -------------------------------
+# Stopwords
+# -------------------------------
+stopwords = {
+    "is","a","the","are","am","i","you","he","she","it","they",
+    "what","who","about","tell","me","your","how","are","to"
+}
+
+# -------------------------------
+# Synonyms Dictionary (NEW 🔥)
+# -------------------------------
+synonyms = {
+    "hi": "hello",
+    "hey": "hello",
+    "python": "python",
+    "bye": "goodbye"
+}
+
+# -------------------------------
+# Preprocess Function (Improved)
+# -------------------------------
+def preprocess(text):
+    text = text.lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    tokens = text.split()
+
+    # Remove stopwords
+    tokens = [word for word in tokens if word not in stopwords]
+
+    # Apply synonym mapping
+    tokens = [synonyms.get(word, word) for word in tokens]
+
+    return tokens
+
+# -------------------------------
+# Build Vocabulary
+# -------------------------------
+documents = []
+tags = []
+
+for tag in intents:
+    for pattern in intents[tag]["patterns"]:
+        tokens = preprocess(pattern)
+        documents.append(tokens)
+        tags.append(tag)
+
+vocab = sorted(set(word for doc in documents for word in doc))
+
+# -------------------------------
+# TF Calculation
+# -------------------------------
+def tf(doc):
+    tf_dict = {}
+    for word in vocab:
+        tf_dict[word] = doc.count(word) / len(doc) if len(doc) > 0 else 0
+    return tf_dict
+
+# -------------------------------
+# IDF Calculation
+# -------------------------------
+def idf(docs):
+    idf_dict = {}
+    N = len(docs)
+
+    for word in vocab:
+        count = sum(1 for doc in docs if word in doc)
+        idf_dict[word] = math.log((N + 1) / (count + 1)) + 1
+
+    return idf_dict
+
+idf_values = idf(documents)
+
+# -------------------------------
+# TF-IDF Vector
+# -------------------------------
+def tfidf(doc):
+    tf_values = tf(doc)
+    return [tf_values[word] * idf_values[word] for word in vocab]
+
+doc_vectors = [tfidf(doc) for doc in documents]
+
+# -------------------------------
+# Cosine Similarity
+# -------------------------------
+def cosine_similarity(vec1, vec2):
+    dot = sum(a*b for a, b in zip(vec1, vec2))
+    mag1 = math.sqrt(sum(a*a for a in vec1))
+    mag2 = math.sqrt(sum(b*b for b in vec2))
+
+    if mag1 == 0 or mag2 == 0:
+        return 0
+    return dot / (mag1 * mag2)
+
+# -------------------------------
+# Smart Response Function (Improved)
+# -------------------------------
+def get_response(user_input):
+    user_tokens = preprocess(user_input)
+    user_vector = tfidf(user_tokens)
+
+    similarities = [cosine_similarity(user_vector, vec) for vec in doc_vectors]
+
+    best_score = max(similarities)
+    best_index = similarities.index(best_score)
+
+    # Dynamic threshold (NEW 🔥)
+    if best_score > 0.25:
+        tag = tags[best_index]
+        return random.choice(intents[tag]["responses"])
+    else:
+        return fallback_response(user_input)
+
+# -------------------------------
+# Fallback Intelligence (NEW 🔥)
+# -------------------------------
+def fallback_response(user_input):
+    if "python" in user_input.lower():
+        return "Python is a popular language used for AI, ML, and automation."
+    elif "name" in user_input.lower():
+        return "I am your chatbot assistant 😊"
+    else:
+        return random.choice([
+            "I'm not sure I understand 🤔",
+            "Can you rephrase that?",
+            "I don't have information about that.",
+            "Try asking something else."
+        ])
+
+# -------------------------------
+# Chat Loop
+# -------------------------------
+def chatbot():
+    print("🤖 Advanced NLP Chatbot Ready! (type 'exit' to quit)")
+    print("--------------------------------------------------")
+
+    while True:
+        user_input = input("You: ")
+
+        if user_input.lower() in ["exit", "quit", "bye"]:
+            print("Bot:", random.choice(intents["goodbye"]["responses"]), "👋")
+            break
+
+        response = get_response(user_input)
+        print("Bot:", response)
+
+# -------------------------------
+# Run
+# -------------------------------
+if __name__ == "__main__":
+    chatbot()
